@@ -48,7 +48,7 @@ def test_easy_hopfield(state, noise_level, seed, iteration, expected):
     "state, noise_level, seed, iteration, expected",
     [
         (state, noise, seed, itr, 0.9)
-        for acc, state, itr in zip([0.9, 0.9], [message, image], [30_000, 20_000])
+        for acc, state, itr in zip([0.9, 0.9], [message, image], [30_000, 40_000])
         for noise in [0.1, 0.2, 0.25]
         for seed in [0, 1, 2]
     ],
