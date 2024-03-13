@@ -3,14 +3,8 @@ from typing import Optional, List
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
-import numba as nb
 
 
-@nb.experimental.jitclass([
-    ("weights", nb.float64[:, :]),
-    ("thresholds", nb.float64[:]),
-    ("state", nb.float64[:, :]),
-])
 class HopfieldNetwork:
     r"""
     This class represents a Hopfield network, a type of recurrent neural network used for associative memory.
