@@ -1,0 +1,369 @@
+\documentclass[12pt, letterpaper]{article}
+
+%-----------------------------------------
+% Frame du document
+%-----------------------------------------
+\usepackage[margin=2.5cm]{geometry}  % Définit les dimensions des marges
+\usepackage{amsmath, amssymb}
+\usepackage[french]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{helvet}
+
+%-----------------------------------------
+% Core
+%-----------------------------------------
+\usepackage{fancyhdr}           % Numérotation des pages, headers
+\fancyhf{}
+\usepackage{hyperref}           % Références hypertexte
+\usepackage{booktabs,multirow,hhline}        % Tableaux
+\usepackage{graphicx}           % Figures
+\usepackage{subfig,wrapfig,caption}        % Sous-figures, ancrées, mise en forme des captions
+\usepackage{titlesec}            % Mise en forme des sections
+\usepackage{enumitem}           % Personnaliser les énumérations
+\usepackage{color}            % Texte de couleur
+\usepackage[dvipsnames]{xcolor}         % Plus de couleurs funky
+\usepackage{textcomp}
+\usepackage{lastpage}
+
+%-----------------------------------------
+% Math
+%-----------------------------------------
+\usepackage{amsmath,amssymb,amsthm,nicefrac}      % Symboles et versatilité mathématique
+\usepackage{mathrsfs}           % ¯\_(ツ)_/¯ Polices d'écriture en math
+\usepackage{wasysym,marvosym}         % Autres symboles math
+\usepackage{mathtools}           % Peaufine la configuration des équations (when used)
+\usepackage{dsfont}
+
+%-----------------------------------------
+% Physique
+%-----------------------------------------
+\usepackage{tikz}            % Dessine des figures
+%\usepackage[american]{circuitikz}         % Dessine des schémas de circuits électroniques
+\usetikzlibrary{quantikz}
+
+\usepackage{verbatim}           % Je l'utilise pour écrire en verbatim et pour les commentaires
+%\usepackage{minted}           % Ajoute du langage de prog élégamment
+\usepackage{lipsum}            % Génère le lorem ispum
+\usepackage{siunitx}            % Unités du système international avec \si
+\usepackage{cancel}
+\usepackage{todonotes}
+\usepackage{empheq}
+\usepackage{physics}
+% \usepackage{bm}% Your new best friend in LaTeX
+% http://ctan.math.ca/tex-archive/macros/latex/contrib/physics/physics.pdf      La documentation dudit merveilleux package
+
+\usepackage{float}
+
+\usepackage{halloweenmath} % décorations d'halloween pour vos devoirs (J'encourage l'utilisation de la sorcière mathémagique avec \mathwitch )
+
+\def\CQFD{\begin{flushright}CQFD.\end{flushright}}
+\def\RANCHITUP{\begin{flushright}CQFD.\end{flushright}}
+\def\PIFPAF{\begin{flushright}CQFD.\end{flushright}}
+% \RANCHITUP ou \PIFPAF pour écrire un CQFD bien placé
+
+\newcommand{\uvec}[1]{\boldsymbol{\hat{\textbf{#1}}}}
+\newcommand{\uveci}{{\bm{\hat{\textnormal{\bfseries\i}}}}}
+\newcommand{\uvecj}{{\bm{\hat{\textnormal{\bfseries\j}}}}}
+% Beaux vecteurs unitaires avec \uvec
+
+
+\newcommand{\del}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\delp}[1]{\frac{\partial }{\partial #1}}
+\newcommand{\ddfrac}[2]{\frac{\dd #1}{\dd #2}}
+\newcommand{\ddfracp}[1]{\frac{\dd }{\dd #1}}
+\newcommand{\braAket}[3]{\left<#1\left|#2\right|#3\right>}
+
+
+%-----------------------------------------
+% Références
+%-----------------------------------------
+\numberwithin{table}{section}
+\numberwithin{figure}{section}
+\numberwithin{equation}{section}
+
+
+%|------------- Bibliography ---------------------------------|
+\usepackage[style=ieee]{biblatex}
+\usepackage{fmultico}
+\addbibresource{references.bib}
+%|------------------------------------------------------------|
+
+
+\begin{document}
+
+\title{Devoir 5 : Réseaux de Hopfield}
+\author{PHQ404}
+\date{Date de complétion: 19 avril 2024 à 23h45}
+\maketitle
+
+\section{Objectif}\label{sec:objectif}
+
+\noindent L'objectif de ce devoir est d'implémenter un réseau de Hopfield.
+
+
+\section{Introduction}\label{sec:introduction}
+\noindent John Hopfield (1933- ) est un physicien et biologiste théorique américain dont les contributions ont
+profondément influencé le domaine de l'intelligence artificielle et de la neurosciences computationnelles.
+Il est particulièrement célèbre pour avoir introduit en 1982 le réseau de Hopfield, un type de réseau de neurones
+artificiels avec une capacité de mémoire associative, capable de servir comme système de récupération de l'information
+avec correction d'erreur.
+Le modèle de Hopfield, utilisant une dynamique énergétique pour atteindre des états stables qui représentent la
+mémoire.
+Ce modèle a fourni un mécanisme pour comprendre comment les réseaux de neurones peuvent auto-organiser l'information
+et a inspiré de nombreuses recherches sur les algorithmes d'optimisation et les modèles de mémoire dans le cerveau.
+Les travaux de Hopfield ont également contribué à établir des ponts entre la physique et la biologie computationnelle,
+enrichissant la compréhension des systèmes complexes et du calcul neuronal.
+Sa vision interdisciplinaire a jeté les bases de nombreuses avancées dans l'étude des systèmes complexes,
+tant biologiques qu'artificiels.
+
+\bigskip
+
+\noindent Articles fondateurs:
+\begin{itemize}[label=\textbullet]
+    \item \fullcite{hopfield1982neural}~\cite{hopfield1982neural}
+    \item \fullcite{hopfield1984neurons}~\cite{hopfield1984neurons}
+\end{itemize}
+
+\noindent Le réseau de Hopfield est un réseau de neurones de type McCullogh et Pitts tel que:
+\begin{itemize}[label=\textbullet]
+    \item Le réseau est \textbf{complet et simple}: chaque neurone est connecté à tous les autres neurones sauf à
+    lui-même. Il est donc récurrent mais sans boucle.
+    \item De plus, les poids de connexions sont \textbf{symétriques}, c'est-à-dire $W=W^\top$ et donc $w_{ij}=w_{ji}$
+    pour tous les $i,j$.
+    \item Les poids de connexion peuvent être négatifs, ce qui signifie que le réseau peut avoir de
+    l'\textbf{inhibition}, c'est-à-dire le processus neurologique par lequel une cellule nerveuse (neurone)
+    réduit l'activité d'une autre cellule nerveuse, limitant ainsi ou empêchant la transmission de signaux excitateurs.
+    \item Les poids de connexion sont plastiques et changent selon une \textbf{règle de Hebb}, souvent résumée
+    par l'adage "ce qui se renforce ensemble, se connecte ensemble", est un principe fondamental en neurosciences
+    et en théorie des réseaux de neurones artificiels qui décrit comment les connexions entre les neurones du
+    cerveau se renforcent durant l'apprentissage.
+    Formulée en 1949 par \textbf{Donald Hebb} (1904-1985), elle stipule que si deux neurones sur les deux
+    côtés d'une synapse (connexion) sont activés simultanément, alors la force de cette connexion augmente.
+    En d'autres termes, la répétition de l'activation simultanée renforce la tendance de ces neurones à
+    s'activer ensemble à l'avenir.
+\end{itemize}
+
+
+\subsection{Dynamique d'un réseau de Hopfield}\label{subsec:dynamique-d'un-reseau-de-hopfield}
+\begin{itemize}[label=\textbullet]
+    \item \textbf{Activité binaire} : l'activité du neurone $i$ à l'instant $t$, $x_i(t)$, est égale à 0 ou 1.
+    \item \textbf{Temps discret} : $t$ appartient à un ensemble dénombrable (discret) et pour simplifier on suppose
+    que $t\in\{0,1,2,\ldots\}$.
+    \item \textbf{Mise à jour asynchrone} : À tout instant $t$, l'activité d'un et d'un seul neurone peut être modifiée.
+    L'indice du neurone mis à jour est choisi aléatoirement à tout instant $t$.
+    \item \textbf{Règle de mise à jour} : Si le neurone $i$ à l'instant $t$ est mis à jour , alors
+    \[
+    x_i(t+1) = H\left(\sum_{j=1}^nw_{ij}x_j(t)-\theta_i\right),
+    \]
+    ce qui signifie que
+    \[
+    x_i(t+1) =
+    \begin{cases}
+    1 & \text{si }\sum_{j=1}^nw_{ij}x_j(t)>\theta_i, \\
+    0 & \text{si }\sum_{j=1}^nw_{ij}x_j(t)\leq\theta_i .
+    \end{cases}
+    \]
+    Sous forme vectorielle,
+    \[
+    \mathbf{x}(t+1) = H\left(W \mathbf{x}(t)-\boldsymbol{\theta}\right).
+    \]
+\end{itemize}
+
+\subsection{Quelques concepts fondamentaux}
+\begin{itemize}[label=\textbullet]
+    \item \textbf{État stationnaire} : si $\mathbf{x}(t)= \mathbf{x}^*$ pour tout $t$, alors $\mathbf{x}^*$ est un
+    état stationnaire.
+    \item \textbf{Fonction d'énergie} (Lyapunov) :
+    \[
+    E(\mathbf{x}) = -\frac{1}{2}\sum_{i\neq j} w_{ij}x_ix_j +\sum_i\theta_ix_i=-\frac{1}{2}\mathbf{x}^\top W \mathbf{x} + \boldsymbol{\theta}^\top \mathbf{x}.
+    \]
+    \item \textbf{Résultat important de Hopfield} : avec la mise à jour asynchrone et les connexions symétriques,
+    \[
+    E\big(\mathbf{x}(t+1)\big) \leq E\big(\mathbf{x}(t)\big),
+    \]
+    ce qui signifie que les minima locaux de $E$ sont des états stationnaires stables.
+    \item \textbf{Mémoire} : un état stationnaire est un état mémorisé.
+    En partant d'un état proche, on peut converger au fil du temps vers cet état ou vers un autre état stationnaire.
+\end{itemize}
+
+\subsection{Plasticité du réseau de Hopfield : apprentissage d'états}
+\begin{itemize}[label=\textbullet]
+    \item \textbf{Apprentissage d'un état} : pour stocker un seul état $\mathbf{y}$, on change $W_{i,j}$ pour
+    \[
+    W_{ij} +
+    \begin{cases}
+    (2y_i - 1)(2y_j - 1)&  \text{si} \quad i \neq j, \\
+    0 &  \text{si} \quad i= j.
+    \end{cases}
+    \]
+    \item \textbf{Apprentissage de plusieurs états} : pour stocker les $\mathbf{y}^\mu$, $\mu=1,\ldots, p$,  on change $W_{i,j}$ pour
+    \[
+    W_{ij} +
+    \begin{cases}
+    \sum_{\mu}(2y^\mu_i - 1)(2y^\mu_j - 1)&  \text{si} \quad i \neq j, \\
+    0 &  \text{si} \quad i= j.
+    \end{cases}
+    \]
+    \item \textbf{Lien avec Hebb} : les termes $y^\mu_i y^\mu_j $ ajoutent du poids à la connexion $(i,j)$ si
+    les neurones $i$ et $j$ sont activés quand le réseau est dans l'état $\mathbf{y}^\mu$.
+\end{itemize}
+
+
+
+\section{Comment présenter et remettre votre TP}\label{sec:comment-presenter-et-remettre-votre-tp}
+
+\noindent Vous devez cloner le répertoire github dans l'organisation du cours au lien suivant :\\
+\href{https://classroom.github.com/a/FJR5qORQ}{https://classroom.github.com/a/FJR5qORQ}.
+Dans ce répertoire se trouvera votre code python, vos tests unitaires ainsi que votre rapport
+décrivant les méthodes utilisés et l'analyse de vos résultats.
+La structure des fichiers ne doit pas être modifiée, mais vous pouvez ajouter des fichiers si vous le désirez.
+Voici la structure de fichiers que votre répertoire devra garder :
+
+\bigskip
+
+Root
+\begin{itemize}
+    \item[]
+        \begin{itemize}
+            \item[$\rightarrow$] src
+                \begin{itemize}
+                    \item[$\hookrightarrow$] \texttt{fichier0.py}
+                    \item[$\hookrightarrow$] \texttt{fichier1.py}
+                    \item[$\hookrightarrow$] \dots
+              \end{itemize}
+        \end{itemize}
+  \item[]
+  \begin{itemize}
+    \item[$\rightarrow$] tests
+    \begin{itemize}
+      \item[$\hookrightarrow$] \texttt{test\_fichier0.py}
+      \item[$\hookrightarrow$] \texttt{test\_fichier1.py}
+      \item[$\hookrightarrow$] \dots
+    \end{itemize}
+  \end{itemize}
+  \item[$\hookrightarrow$] \texttt{.gitignore}
+  \item[$\hookrightarrow$] \texttt{requirements.txt}
+  \item[$\hookrightarrow$] \texttt{README.md}
+\end{itemize}
+
+\bigskip
+
+\noindent Le fichier \texttt{requirements.txt} doit contenir les dépendances de votre projet.
+Le fichier \\\texttt{README.md} doit contenir les instructions pour installer et utiliser votre projet ainsi
+qu'une brève description du devoir et des méthodes utilisés dans le code.
+Voir la section~\ref{sec:Readme} pour plus de détails.
+Dans le dossier \texttt{src} se trouvera votre code python et dans le dossier \texttt{tests} se trouvera vos tests
+unitaires.
+
+\bigskip
+
+\noindent La remise et la correction automatique du code se fera à chaque \texttt{push} sur le répertoire github.
+Notez que seul le dernier \texttt{push} sur la branche \texttt{main} sera considéré pour la correction.
+
+
+\section{Énoncé}\label{sec:enonce}
+
+\subsection{Modèle de Hopfield}\label{subsec:modele}
+
+\noindent Vous allez devoir implémenter une classe \texttt{HopfieldNetwork} qui permet de créer un réseau de Hopfield.
+Dans celle-ci, vous devrez implémenter les méthodes suivantes:
+\begin{itemize}[label=\textbullet]
+    \item \texttt{\_\_init\_\_} : le constructeur de la classe qui prend en argument les poids de connexions
+    \texttt{weights}, les seuils \texttt{thresholds} et l'état initial \texttt{initial\_state} du réseau.
+    \item \texttt{n} : Une propriété qui retourne le nombre de neurones dans le réseau.
+    \item \texttt{energy} : Une méthode qui retourne l'énergie du réseau.
+    \item \texttt{get\_state\_energy} : Une méthode qui calcule l'énergie d'un état donné.
+    \item \texttt{set\_state} : Une méthode qui permet de changer l'état du réseau.
+    \item \texttt{update} : Une méthode qui met à jour l'état du réseau de manière asynchrone sur un pas de temps.
+    \item \texttt{simulate} : Une méthode qui met à jour l'état du réseau de manière asynchrone sur un nombre de
+    pas de temps \texttt{m} et qui retourne l'historique des états du réseau.
+    \item \texttt{learn\_one\_state} : Une méthode qui permet d'apprendre un état \texttt{state} en modifiant les
+    poids de connexions.
+    \item \texttt{learn\_many\_states} : Une méthode qui permet d'apprendre plusieurs états \texttt{states} en modifiant les
+    poids de connexions.
+\end{itemize}
+
+\subsection{Visualisation des résultats}\label{subsec:visualisation-des-resultats}
+
+\noindent Vous allez devoir présenter les graphiques suivants:
+\begin{itemize}[label=\textbullet]
+    \item L'énergie du réseau en fonction du temps pour des états mémorisés différents.
+    \item L'évolution de l'état du réseau en fonction du temps pour des états mémorisés différents.
+    (Utilisez des gifs)
+\end{itemize}
+
+\noindent Vous allez devoir faire ces derniers graphiques pour les états `image` et `message` qui sont dans le
+dossier \texttt{tests/data}.
+En plus, vous allez devoir ajouter une petite analyse sur l'apprentissage de plusieurs états
+(fait avec la méthode \texttt{learn\_many\_states}) et sur la dynamique du réseau pour ces états.
+
+
+\bigskip
+
+\noindent Note: Toutes les fonctions qui doivent être implémentées sont déjà définies dans les fichiers
+et retournent des \texttt{NotImplementedError}.
+
+
+\section{Vérification}\label{sec:verification}
+
+\noindent Il est important de vérifer vos implémentations.
+En effet, vous devez vous assurer que vos méthodes fonctionnent correctement et pour ce faire, vous devez rouler et
+implémenter des tests unitaires qui testent chacune de vos classes et fonctions.
+De plus, vous devriez tester si les résultats obtenus sont logiques.
+Il serait aussi intéressant de retrouver vos vérifications dans votre rapport.
+Il est fortement recommandé d'ajouter des tests unitaires dans le dossier \texttt{tests}, mais les tests déjà
+implémentés ne doivent pas être modifiés.
+
+
+\section{Readme}\label{sec:Readme}
+
+\noindent Vous devez faire un fichier Readme qui explique ce que contient votre répertoire et comment l'utiliser.
+Le Readme sera divisé en 2 parties: une partie plus courte qui consiste essentiellement à ce qu'on retrouve normalement
+dans Readme scientifique et une partie plus longue qui consiste en une présentation et analyse des résultats.
+
+\bigskip
+
+\noindent La première partie doit contenir les éléments suivants:
+\begin{itemize}
+    \item Une brève description du contenue du répertoire;
+    \item Une figure qui résume le contenu du répertoire ainsi que les résultats principaux;
+    \item Les instructions pour installer et utiliser votre projet.
+\end{itemize}
+Il faut qu'un utilisateur externe soit en mesure de regarder la première partie du Readme et comprendre en quelques
+secondes le contenu du répertoire, les résultats principaux et comment utiliser le projet.
+C'est important d'être concis, clair et efficace.
+Pour la figure, il sagit d'une image permettant au lecteur de comprendre rapidement le contenu du répertoire.
+Celle-ci pourrait être, par exemple, un diagramme représentant le pipeline de traitement des données, un graphique
+comparant les différentes méthodes implémentées, etc.
+
+\bigskip
+
+\noindent Le deuxième partie doit contenir les éléments suivants:
+\begin{itemize}
+    \item Une plus longue description du contenu du répertoire;
+    \item Une présentation et explication des méthodes utilisées;
+    \item Une présentation des résultats obtenus;
+    \item Une analyse des résultats obtenus;
+    \item Une conclusion.
+\end{itemize}
+Cette seconde partie sert à expliquer en quoi consiste ce dépôt si l'utilisateur décidait que la première partie
+du Readme était assez intéressante et bien présentée pour qu'il veuille en savoir plus.
+Il sagit ici d'un court rapport scientifique.
+Il faut donc rester concis afin d'être lu en quelques minutes seulement, mais mettre suffisamment d'information pour
+que l'utilisateur comprenne bien la théorie, les méthodes et les résultats.
+
+
+
+\section{Critères d'évaluation}\label{sec:criteres-d'evaluation}
+
+\begin{description}
+  \item[70 points] Pour le résultat de l'autocorrection du code obtenue à l'aide du module TAC\@.
+  \item[30 points] Pour la qualité du Readme.
+\end{description}
+
+
+\newpage
+\printbibliography
+
+\end{document}
