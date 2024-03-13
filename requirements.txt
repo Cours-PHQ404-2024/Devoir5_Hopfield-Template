@@ -1,5 +1,6 @@
 matplotli~=3.8.3
 numba~=0.59.0
 numpy~=1.26.4
+pytest~=8.1.1
 pytest-timeout~=2.3.1
 git+https://github.com/JeremieGince/TPAutoCorrect
